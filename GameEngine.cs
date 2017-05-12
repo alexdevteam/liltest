@@ -5,14 +5,14 @@ using AIexLibrary;
 using UnityEngine.AI;
 
 public class GameEngine : MonoBehaviour {
-    public static GameEngine instance;
-    public GameObject player;
-    public Vector2 playerRegPos;
-    public MapUtils.Map level;
-    public int mapLength;
-    public int mapWidth;
-    public GameObject tilePrefab;
-    public GameObject activeRegionPrefab;
+    [SerializeField] static GameEngine instance;
+    [SerializeField] public GameObject player;
+    [SerializeField] public Vector2 playerRegPos;
+    [SerializeField] MapUtils.Map level;
+    [SerializeField] int mapLength;
+    [SerializeField] int mapWidth;
+    [SerializeField] GameObject tilePrefab;
+    [SerializeField] GameObject activeRegionPrefab;
     bool shouldBeInActive = true;
     MapUtils.Region[,] lastRegions=new MapUtils.Region[1,1];
     int lateDelay = 0;
@@ -54,10 +54,7 @@ public class GameEngine : MonoBehaviour {
                     playerRegPos = new Vector2(reg.regionX, reg.regionY);
                 }
                 else
-                {
                     reg.tiles[0, 0, 0].linkedObject.transform.parent.GetChild(0).GetComponent<LocalNavMeshBuilder>().enabled = false;
-                }
-
             }
         }
         foreach(MapUtils.Region reg in activeRegions)
@@ -82,7 +79,6 @@ public class GameEngine : MonoBehaviour {
             reg.linkedObject = regHolder;
             regHolder.GetComponent<RegionRenderer>().reg = reg;
             lastRegions[reg.regionX, reg.regionY] = reg;
-            
         }
     }
 }
