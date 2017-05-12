@@ -5,32 +5,28 @@ using UnityEngine;
 //Made by AlexINF 2017
 namespace AIexLibrary
 {
-
     public class TileUtils
     {
-        static public GameObject[] prefabs = new GameObject[10000];
+        public static GameObject[] prefabs = new GameObject[10000];
         /*
          * TileData.txt format:
          * Name:ID:Prefab name [In Resources folder]
          */
-
-        static public void GetTileData()
+        public static void GetTileData()
         {
             prefabs = Resources.LoadAll<GameObject>("Tiles");
         }
-
-        static public MapUtils.Tile.Data ConstructTileData(int ID)
+        public static MapUtils.Tile.Data ConstructTileData(int id)
         {
-            GameObject prefab = prefabs[ID];
+            GameObject prefab = prefabs[id];
             return new MapUtils.Tile.Data(prefab.GetComponent<MeshFilter>().sharedMesh, prefab.GetComponent<Renderer>().sharedMaterial);
         }
-
         /// <summary>
         /// Find a tile in the Resources folder.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        static public MapUtils.Tile.Data FindTileData(string name)
+        public static MapUtils.Tile.Data FindTileData(string name)
         {
             foreach(GameObject pf in prefabs)
             {
@@ -53,7 +49,6 @@ namespace AIexLibrary
             /// </summary>
             public class Data
             {
-
                 public Mesh mesh;
                 public Material mat;
                 public EntityBehaviour script;
@@ -92,7 +87,7 @@ namespace AIexLibrary
                 tileData.script = linkedObject.GetComponent<EntityBehaviour>();
                 linkedObject.GetComponent<MeshFilter>().mesh = tileData.mesh;
                 linkedObject.GetComponent<MeshRenderer>().material = tileData.mat;
-                if (tileData.script.startMethod!=null)
+                if (tileData.script.startMethod != null)
                     tileData.script.startMethod();
                 tileData.script.linkedTile = this;
             }
@@ -130,9 +125,7 @@ namespace AIexLibrary
                 regionX = x;
                 regionY = y;
                 for (int i = 0; i < size; i++)
-                {
                     tiles[i % length, Mathf.FloorToInt(i / length),0] = new Tile(this, i % length, Mathf.FloorToInt(i*1f / length*1f),0, new Tile.Data());
-                }
             }
             public Region(Map parent, int x, int y, Tile[,,] data)
             {
@@ -209,10 +202,9 @@ namespace AIexLibrary
         ///<summary>
         ///Create a map (With x regions long and y regions wide)
         /// </summary>
-        static public Map GenerateMap(int length, int width, string seed, int randomFillPercent,int smoothLoops)
+        public static Map GenerateMap(int length, int width, string seed, int randomFillPercent,int smoothLoops)
         {
             int[,] map = new int[length*10, width*10];
-
             //Fill the map randomly
             if (seed == "")
             {
@@ -261,7 +253,6 @@ namespace AIexLibrary
                                 }
                             }
                         }
-
                         //Smooth.
                         if (wallCount > 4)
                             map[x, y] = 1;
@@ -270,7 +261,6 @@ namespace AIexLibrary
                     }
                 }
             }
-
             //Done! Now to pass the data to the tiles.
             Map tileMap = new Map(length, width);
             Tile.Data stoneData = TileUtils.ConstructTileData(0001);
@@ -295,7 +285,6 @@ namespace AIexLibrary
                 }
             }
             return tileMap;
-
         }
     }
 
@@ -310,7 +299,6 @@ namespace AIexLibrary
             public string commandName;
             public string description;
             public string command;
-
             public Command(string name, string description, string command)
             {
                 commandName = name;
@@ -323,7 +311,6 @@ namespace AIexLibrary
         {
             AddCommand("test", "Test Command.", ";");
         }
-
         // Update is called once per frame
         private void OnGUI()
         {
