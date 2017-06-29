@@ -5,22 +5,21 @@ using AIexLibrary;
 using UnityEngine.AI;
 
 public class GameEngine : MonoBehaviour {
-    [SerializeField] static GameEngine instance;
-    [SerializeField] public GameObject player;
-    [SerializeField] public Vector2 playerRegPos;
+    public static GameEngine instance;
+    [SerializeField] GameObject player;
+    [SerializeField] Vector2 playerRegPos;
     [SerializeField] MapUtils.Map level;
     [SerializeField] int mapLength;
     [SerializeField] int mapWidth;
     [SerializeField] GameObject tilePrefab;
     [SerializeField] GameObject activeRegionPrefab;
     bool shouldBeInActive = true;
-    MapUtils.Region[,] lastRegions=new MapUtils.Region[1,1];
+    MapUtils.Region[ , ] lastRegions=new MapUtils.Region[1,1];
     int lateDelay = 0;
-    void Awake()
+    void Start()
     {
         lastRegions = new MapUtils.Region[mapLength, mapWidth];
         instance = this;
-        TileUtils.GetTileData();
          level = MapUtils.GenerateMap(mapLength, mapWidth,"tfddsf",50,2);
     }
     private void Update()
@@ -32,7 +31,7 @@ public class GameEngine : MonoBehaviour {
         foreach (MapUtils.Region reg in level.regions)
         {
             if (((reg.regionX * 10+10) > player.transform.position.x && (reg.regionX * 10 -20) < player.transform.position.x)
-                && ((reg.regionY*10+5) > player.transform.position.z && (reg.regionY * 10 -20) < player.transform.position.z))
+                && ((reg.regionY*10+5) > player.transform.position.y && (reg.regionY * 10 -20) < player.transform.position.y))
             {
                 activeRegions[activeRegionCount] = reg;
                 activeRegionCount++;
@@ -48,7 +47,7 @@ public class GameEngine : MonoBehaviour {
             if (reg.tiles[0, 0, 0].linkedObject != null)
             {
                 if (((reg.regionX * 10) > player.transform.position.x && (reg.regionX * 10 - 10) < player.transform.position.x)
-                && ((reg.regionY * 10) > player.transform.position.z && (reg.regionY * 10 - 10) < player.transform.position.z))
+                && ((reg.regionY * 10) > player.transform.position.y && (reg.regionY * 10 - 10) < player.transform.position.y))
                 {
                     reg.tiles[0, 0, 0].linkedObject.transform.parent.GetChild(0).GetComponent<LocalNavMeshBuilder>().enabled = true;
                     playerRegPos = new Vector2(reg.regionX, reg.regionY);
@@ -75,7 +74,7 @@ public class GameEngine : MonoBehaviour {
         
         //If the region holder is null, create one!
         if (reg.linkedObject == null) {
-            GameObject regHolder = Instantiate(activeRegionPrefab, new Vector3(reg.regionX * 10 - 10, 0f, reg.regionY * 10 - 10), Quaternion.Euler(Vector3.zero)) as GameObject;
+            GameObject regHolder = Instantiate(activeRegionPrefab, new Vector3(reg.regionX * 10 - 10, reg.regionY * 10 - 10, 0f), Quaternion.Euler(Vector3.zero)) as GameObject;
             reg.linkedObject = regHolder;
             regHolder.GetComponent<RegionRenderer>().reg = reg;
             lastRegions[reg.regionX, reg.regionY] = reg;

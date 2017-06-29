@@ -11,10 +11,8 @@ public class PlayerScript : MonoBehaviour {
     {
         Vector3 movement=new Vector3();
         movement.x = Input.GetAxis("Horizontal")*5f*Time.deltaTime;
-        movement.z = Input.GetAxis("Vertical")*5f*Time.deltaTime;
-        Debug.Log(movement);
+        movement.y = Input.GetAxis("Vertical")*5f*Time.deltaTime;
         transform.Translate(movement,null);
-        transform.LookAt(movement+transform.position, -Vector3.forward);
         transform.eulerAngles = new Vector3(0, -transform.eulerAngles.z,0);
     }
 }

@@ -1,80 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 //Made by AlexINF 2017
 namespace AIexLibrary
 {
-    public class TileUtils
-    {
-        public static GameObject[] prefabs = new GameObject[10000];
-        /*
-         * TileData.txt format:
-         * Name:ID:Prefab name [In Resources folder]
-         */
-        public static void GetTileData()
-        {
-            prefabs = Resources.LoadAll<GameObject>("Tiles");
-        }
-        public static MapUtils.Tile.Data ConstructTileData(int id)
-        {
-            GameObject prefab = prefabs[id];
-            return new MapUtils.Tile.Data(prefab.GetComponent<MeshFilter>().sharedMesh, prefab.GetComponent<Renderer>().sharedMaterial);
-        }
-        /// <summary>
-        /// Find a tile in the Resources folder.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static MapUtils.Tile.Data FindTileData(string name)
-        {
-            foreach(GameObject pf in prefabs)
-            {
-                if (pf.name == name)
-                {
-                    return new MapUtils.Tile.Data(pf.GetComponent<MeshFilter>().sharedMesh, pf.GetComponent<Renderer>().sharedMaterial);
-                }
-            }
-            return null;
-        }
-
-    }
     public class MapUtils
     {
         public class Tile
         {
-            /// <summary>
-            /// Class for holding permanent tile information (Like meshes, materials, etc.) For temporal/variant ones,
-            /// use the variables in MapUtils.Tile.
-            /// </summary>
-            public class Data
-            {
-                public Mesh mesh;
-                public Material mat;
-                public EntityBehaviour script;
-                public Data(Mesh mesh, Material mat)
-                {
-                    this.mesh = mesh;
-                    this.mat = mat;
-                }
-                public Data()
-                {
-                    mesh = null;
-                    mat = null;
-                }
-            }
-            /// <summary>
-            /// Deprecated. Use tileZPos instead.
-            /// </summary>
-            public bool isCollidable;
             public GameObject linkedObject;
-            public Data tileData;
+            public TileDatabase.Entity tileData;
             public Region parentRegion;
             public int tileX;
             public int tileY;
             public int tileZ;
             public int tileZPos=0;
-            public Tile(Region parent, int x, int y, int z, Data data)
+            public Tile(Region parent, int x, int y, int z, TileDatabase.Entity data)
             {
                 tileX = x;
                 tileY = y;
@@ -84,12 +27,24 @@ namespace AIexLibrary
             }
             public void InitializeGameObject()
             {
-                tileData.script = linkedObject.GetComponent<EntityBehaviour>();
-                linkedObject.GetComponent<MeshFilter>().mesh = tileData.mesh;
-                linkedObject.GetComponent<MeshRenderer>().material = tileData.mat;
-                if (tileData.script.startMethod != null)
-                    tileData.script.startMethod();
-                tileData.script.linkedTile = this;
+                linkedObject.GetComponent<SpriteRenderer>().sprite = tileData.sprite;
+                tileData.linkedTile = this;
+                tileData.Init();
+            }
+            public void FinishLight()
+            {
+                if (!tileData.collidable)
+                {
+                    linkedObject.GetComponent<SpriteRenderer>().sortingOrder = -5;
+                    linkedObject.transform.GetChild(0).gameObject.SetActive(false);
+                }
+                else
+                {
+                    linkedObject.GetComponent<SpriteRenderer>().sortingOrder = 1;
+                    linkedObject.transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().sprite = TileDatabase.instance.FindEntity("Light").tileset[(tileData.tileset as List<Sprite>).IndexOf(linkedObject.GetComponent<SpriteRenderer>().sprite)];
+                    linkedObject.transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().enabled = false;
+                    linkedObject.transform.GetChild(0).gameObject.GetComponent<Light2D.LightObstacleGenerator>().enabled = true;
+                }
             }
         }
 
@@ -112,7 +67,7 @@ namespace AIexLibrary
             const int length = 10;
             const int width = 10;
             /// <summary>
-            /// The size of the region.
+            /// The size of the region. [Not counting Z values]
             /// </summary>
             const int size = 100;
             ///<summary>
@@ -125,7 +80,7 @@ namespace AIexLibrary
                 regionX = x;
                 regionY = y;
                 for (int i = 0; i < size; i++)
-                    tiles[i % length, Mathf.FloorToInt(i / length),0] = new Tile(this, i % length, Mathf.FloorToInt(i*1f / length*1f),0, new Tile.Data());
+                    tiles[i % length, Mathf.FloorToInt(i / length),0] = new Tile(this, i % length, Mathf.FloorToInt(i*1f / length*1f),0, TileDatabase.instance.FindEntity("Background Stone"));
             }
             public Region(Map parent, int x, int y, Tile[,,] data)
             {
@@ -145,7 +100,53 @@ namespace AIexLibrary
             }
             public Tile GetTile(int x, int y, int z)
             {
-                return tiles[x, y, z];
+                if (x > 9)
+                {
+                    if (y > 9)
+                    {
+                        return parentMap.GetRegion(regionX + 1, regionY + 1).GetTile(x-10,y-10, z);
+                    }
+                    else if (0 > y)
+                    {
+                        return parentMap.GetRegion(regionX + 1, regionY - 1).GetTile(x-10, y+10, z);
+                    }
+                    else
+                    {
+                        return parentMap.GetRegion(regionX + 1, regionY).GetTile(x - 10, y, z);
+                    }
+                }
+                else if (0 > x)
+                {
+                    if (y > 9)
+                    {
+                        return parentMap.GetRegion(regionX - 1, regionY + 1).GetTile(x + 10, y - 10, z);
+                    }
+                    else if (0 > y)
+                    {
+                        return parentMap.GetRegion(regionX - 1, regionY - 1).GetTile(x + 10, y + 10, z);
+                    }
+                    else
+                    {
+                        return parentMap.GetRegion(regionX - 1, regionY).GetTile(x + 10, y, z);
+                    }
+                }
+                if (y > 9)
+                {
+                    return parentMap.GetRegion(regionX, regionY + 1).GetTile(x, y - 10, z);
+                }
+                else if (0 > y)
+                {
+                    return parentMap.GetRegion(regionX, regionY - 1).GetTile(x, y + 10, z);
+                }
+                try
+                {
+                    return tiles[x, y, z];
+                }
+                catch
+                {
+                    return null;
+                }
+                
             }
             public Tile[] GetTiles(int x, int y)
             {
@@ -263,23 +264,18 @@ namespace AIexLibrary
             }
             //Done! Now to pass the data to the tiles.
             Map tileMap = new Map(length, width);
-            Tile.Data stoneData = TileUtils.ConstructTileData(0001);
-            Tile.Data coalData = TileUtils.ConstructTileData(0003);
+            TileDatabase.Entity stoneData = TileDatabase.instance.FindEntity("Stone");
+            TileDatabase.Entity coalData = TileDatabase.instance.FindEntity("Coal");
+            TileDatabase.Entity backgroundStoneData = TileDatabase.instance.FindEntity("Stone Background");
             foreach (Region reg in tileMap.regions)
             {
                 for (int tileY = 0; tileY < 10; tileY++)
                 {
                     for (int tileX = 0; tileX < 10; tileX++)
                     {
-                        //Set as floor
-                        if (map[tileX + reg.regionX * 10, tileY + reg.regionY * 10] == 1) {
-                            reg.GetTile(tileX,tileY,0).isCollidable = false;
-                            reg.GetTile(tileX, tileY, 0).tileData = stoneData;
-                            reg.SetTile(tileX, tileY, 1, new Tile(reg, tileX, tileY, 1, stoneData));
-                        }else
+                        if (map[tileX+reg.regionX*10, tileY+reg.regionY*10] == 1)
                         {
-                            reg.GetTile(tileX, tileY, 0).isCollidable = false;
-                            reg.GetTile(tileX, tileY, 0).tileData = stoneData;
+                            reg.SetTile(tileX, tileY, 1, new Tile(reg, tileX, tileY, 1, stoneData));
                         }
                     }
                 }
